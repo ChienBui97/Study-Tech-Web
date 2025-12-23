@@ -44,12 +44,18 @@ def searchPhone(max_price: int):
     return resulst
 
 #Học phương thức POST
-@app.post("/phones")
-def addPhone(new_phone: Phone):
+@app.post("/phones/auto")
+def addPhoneAuto(name: str, price: int):
     currentPhone = loadData()
-    currentPhone.append(new_phone.dict())
+    # Tính toán ID mới: lấy id cuối cùng +1
+    newID = 1
+    if len(currentPhone)>0:
+        newID = currentPhone[-1]["id"] +1
+    
+    new_phone = {"id": newID, "name": name, "price":price}
+    currentPhone.append(new_phone)
     saveData(currentPhone)
-    return {"massege":"Đã thêm thành công "}
+    return {"message":"Đã cập nhật thành công"}
 
 #Học phương thức DELETE
 @app.get("/delete/{phone_id}")

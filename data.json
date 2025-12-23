@@ -18,5 +18,10 @@
         "id": 4,
         "name": "SamSung Galaxy S15",
         "price": 12000
+    },
+    {
+        "id": 5,
+        "name": "Samsung A18",
+        "price": 1400
     }
 ]
