@@ -1,7 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import  Jinja2Templates
+from fastapi import Request
 from pydantic import BaseModel
 import json
-import os
+
 app = FastAPI()
 #Đọc dữ liệu và lưu dữ liệu vào file json giã lập database
 DATA_TITLE = "data.json"
@@ -20,10 +24,6 @@ class Phone(BaseModel):
     price: int
 
 #Học phương thức GET
-@app.get("/")
-def home():
-    return {"message":"Server đang hoạt động"}
-
 @app.get("/phones")
 def getAllPhone():
     return loadData()
@@ -44,12 +44,18 @@ def searchPhone(max_price: int):
     return resulst
 
 #Học phương thức POST
-@app.post("/phones")
-def addPhone(new_phone: Phone):
+@app.post("/phones/auto")
+def addPhoneAuto(name: str, price: int):
     currentPhone = loadData()
-    currentPhone.append(new_phone.dict())
+    # Tính toán ID mới: lấy id cuối cùng +1
+    newID = 1
+    if len(currentPhone)>0:
+        newID = currentPhone[-1]["id"] +1
+    
+    new_phone = {"id": newID, "name": name, "price":price}
+    currentPhone.append(new_phone)
     saveData(currentPhone)
-    return {"massege":"Đã thêm thành công "}
+    return {"message":"Đã cập nhật thành công"}
 
 #Học phương thức DELETE
 @app.get("/delete/{phone_id}")
@@ -72,3 +78,16 @@ def updatePhoneByID(phone_id:int, updatePhone: Phone):
             saveData(currentPhone)
             return {"massege":f"Đã cập nhật thành công sản phẩm có ID{phone_id}"}
     raise HTTPException(status_code=404, detail=f"Không tìm thấy sản phẩm có id{phone_id} để cập nhập")
+
+#--Nhúng backend với giao diện HTML--
+#hiển thị danh sách sản phẩm
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def readItem(request: Request):
+    return templates.TemplateResponse("index.html",{"request": request})
+
+#tạo form nhập dữ liệu trang admin
+@app.get("/admin", response_class=HTMLResponse)
+async def adminPage(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
