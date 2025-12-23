@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trang Quản Trị</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        .form-box { background: #eee; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .item { border-bottom: 1px solid #ccc; padding: 10px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <h1>Quản lý kho hàng</h1>
+    <a href="/">← Quay lại trang chủ</a>
+
+    <div class="form-box">
+        <h3 id="form-title">Thêm sản phẩm mới</h3>
+        <input type="hidden" id="edit-id"> <input type="text" id="name" placeholder="Tên sản phẩm">
+        <input type="number" id="price" placeholder="Giá">
+        
+        <button id="btn-save" onclick="addPhone()">Lưu mới</button>
+        <button id="btn-cancel" onclick="cancelEdit()" style="display:none">Hủy sửa</button>
+    </div>
+
+    <div id="admin-list"></div>
+
+    <script>
+        // 1. Hàm đổ dữ liệu cũ vào Form để sửa
+        function prepareEdit(id, name, price) {
+            document.getElementById('form-title').innerText = "Đang sửa sản phẩm ID: " + id;
+            document.getElementById('edit-id').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('price').value = price;
+            
+            document.getElementById('btn-save').innerText = "Cập nhật thay đổi";
+            document.getElementById('btn-save').onclick = updatePhone; // Đổi hàm khi bấm nút
+            document.getElementById('btn-cancel').style.display = "inline";
+        }
+        // 1. Phải có hàm addPhone để hệ thống không báo lỗi "not defined"
+        async function addPhone() {
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+            if (!name || !price) return alert("Vui lòng nhập đủ tên và giá!");
+
+            await fetch(`/phones/auto?name=${name}&price=${price}`, { method: 'POST' });
+            
+            cancelEdit();
+            loadAdminData(); // Tự động nạp lại danh sách
+        }
+                // 2. Hàm gửi dữ liệu đã sửa lên Server (Dùng PUT)
+        async function updatePhone() {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+
+            const updatedData = { "id": parseInt(id), "name": name, "price": parseInt(price) };
+
+            const response = await fetch(`/phones/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                alert("Cập nhật thành công!");
+                cancelEdit(); // Quay về chế độ "Thêm mới"
+                loadAdminData(); // Tải lại danh sách để thấy giá mới
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('form-title').innerText = "Thêm sản phẩm mới";
+            document.getElementById('edit-id').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('btn-save').innerText = "Lưu mới";
+            document.getElementById('btn-save').onclick = addPhone;
+            document.getElementById('btn-cancel').style.display = "none";
+        }
+
+        // 3. Cập nhật lại hàm loadAdminData để có nút "SỬA"
+        async function loadAdminData() {
+            const res = await fetch('/phones?t=' + new Date().getTime());
+            const data = await res.json();
+            const container = document.getElementById('admin-list');
+            container.innerHTML = '';
+            data.forEach(p => {
+                container.innerHTML += `
+                    <div class="item" style="border-bottom: 1px solid #ccc; padding:10px;">
+                        <span>ID: ${p.id} - <strong>${p.name}</strong> - ${p.price}$</span>
+                        <div>
+                            <button onclick="prepareEdit(${p.id}, '${p.name}', ${p.price})" style="color:blue">SỬA</button>
+                            <button onclick="deletePhone(${p.id})" style="color:red">XÓA</button>
+                        </div>
+                    </div>`;
+            });
+        }
+        loadAdminData();
+    </script>
+</body>
+</html>

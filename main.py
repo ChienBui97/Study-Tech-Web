@@ -1,7 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import  Jinja2Templates
+from fastapi import Request
 from pydantic import BaseModel
 import json
-import os
+
 app = FastAPI()
 #Đọc dữ liệu và lưu dữ liệu vào file json giã lập database
 DATA_TITLE = "data.json"
@@ -20,10 +24,6 @@ class Phone(BaseModel):
     price: int
 
 #Học phương thức GET
-@app.get("/")
-def home():
-    return {"message":"Server đang hoạt động"}
-
 @app.get("/phones")
 def getAllPhone():
     return loadData()
@@ -78,3 +78,16 @@ def updatePhoneByID(phone_id:int, updatePhone: Phone):
             saveData(currentPhone)
             return {"massege":f"Đã cập nhật thành công sản phẩm có ID{phone_id}"}
     raise HTTPException(status_code=404, detail=f"Không tìm thấy sản phẩm có id{phone_id} để cập nhập")
+
+#--Nhúng backend với giao diện HTML--
+#hiển thị danh sách sản phẩm
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def readItem(request: Request):
+    return templates.TemplateResponse("index.html",{"request": request})
+
+#tạo form nhập dữ liệu trang admin
+@app.get("/admin", response_class=HTMLResponse)
+async def adminPage(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
